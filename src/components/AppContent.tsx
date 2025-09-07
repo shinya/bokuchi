@@ -28,6 +28,12 @@ interface AppContentProps {
     showWhitespace: boolean;
   };
 
+  // Custom CSS settings
+  customCSS?: {
+    isCustomized: boolean;
+    customCSS: string;
+  };
+
   // Handlers
   onTabChange: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
@@ -52,6 +58,7 @@ const AppContent: React.FC<AppContentProps> = ({
   isInitialized,
   isSettingsLoaded,
   editorSettings,
+  customCSS,
   onTabChange,
   onTabClose,
   onNewTab,
@@ -140,6 +147,7 @@ const AppContent: React.FC<AppContentProps> = ({
                       globalVariables={globalVariables}
                       zoomLevel={currentZoom}
                       onContentChange={onContentChange}
+                      customCSS={customCSS}
                     />
                   </Box>
                 </>
@@ -179,6 +187,7 @@ const AppContent: React.FC<AppContentProps> = ({
                     globalVariables={globalVariables}
                     zoomLevel={currentZoom}
                     onContentChange={onContentChange}
+                    customCSS={customCSS}
                   />
                 </Box>
               )}

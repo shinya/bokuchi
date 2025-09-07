@@ -15,12 +15,17 @@ interface PreviewProps {
   globalVariables?: Record<string, string>;
   zoomLevel?: number;
   onContentChange?: (newContent: string) => void;
+  customCSS?: {
+    isCustomized: boolean;
+    customCSS: string;
+  };
 }
 
-const MarkdownPreview: React.FC<PreviewProps> = ({ content, darkMode, theme, globalVariables = {}, zoomLevel = 1.0, onContentChange }) => {
+const MarkdownPreview: React.FC<PreviewProps> = ({ content, darkMode, theme, globalVariables = {}, zoomLevel = 1.0, onContentChange, customCSS }) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const [processedContent, setProcessedContent] = useState(content || '');
   const [exportError, setExportError] = useState<string | null>(null);
+  const [customStyleElement, setCustomStyleElement] = useState<HTMLStyleElement | null>(null);
 
   useEffect(() => {
     // シンタックスハイライト用のカスタムレンダラーを設定
@@ -99,6 +104,32 @@ const MarkdownPreview: React.FC<PreviewProps> = ({ content, darkMode, theme, glo
 
     processContent();
   }, [content, globalVariables]);
+
+  // カスタムCSSの適用
+  useEffect(() => {
+    // 既存のカスタムスタイルを削除
+    if (customStyleElement) {
+      document.head.removeChild(customStyleElement);
+      setCustomStyleElement(null);
+    }
+
+    // カスタムCSSが設定されている場合のみ適用
+    if (customCSS?.isCustomized && customCSS.customCSS) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'bokuchi-custom-css';
+      styleElement.textContent = customCSS.customCSS;
+      document.head.appendChild(styleElement);
+      setCustomStyleElement(styleElement);
+    }
+
+    // クリーンアップ関数
+    return () => {
+      if (customStyleElement) {
+        document.head.removeChild(customStyleElement);
+        setCustomStyleElement(null);
+      }
+    };
+  }, [customCSS]);
 
   useEffect(() => {
     // リンクのクリックイベントを処理
@@ -436,155 +467,53 @@ const MarkdownPreview: React.FC<PreviewProps> = ({ content, darkMode, theme, glo
           flex: 1,
           p: 2,
           overflow: 'auto',
-          backgroundColor: theme === 'darcula' ? '#2B2B2B' : (darkMode ? 'grey.900' : 'grey.50'),
-          color: theme === 'darcula' ? '#A9B7C6' : (darkMode ? 'grey.100' : 'text.primary'),
+          backgroundColor: customCSS?.isCustomized ? 'var(--color-background)' : (theme === 'dark' ? '#0d1117' : theme === 'darcula' ? '#2b2b2b' : '#ffffff'),
+          color: customCSS?.isCustomized ? 'var(--color-text)' : (theme === 'dark' ? '#e6edf3' : theme === 'darcula' ? '#a9b7c6' : '#24292f'),
         }}
       >
         <div
           ref={previewRef}
           className={`markdown-preview ${theme === 'darcula' ? 'hljs-dark' : (darkMode ? 'hljs-dark' : 'hljs-light')}`}
+          data-theme={theme || 'default'}
           dangerouslySetInnerHTML={{ __html: htmlContent }}
           style={{
             fontSize: `${Math.round(16 * zoomLevel)}px`,
             lineHeight: `${Math.round(1.6 * zoomLevel)}`,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            wordBreak: 'break-word',
-            overflowWrap: 'break-word',
-            hyphens: 'auto',
           }}
         />
-        <style>
-          {`
-            .markdown-preview {
-              word-break: break-word;
-              overflow-wrap: break-word;
-              hyphens: auto;
-              max-width: 100%;
-              overflow-x: hidden;
-            }
+        {/* カスタムCSSが設定されていない場合は、既存のmarkdown.cssのCSS変数システムを使用 */}
+        {!customCSS?.isCustomized && (
+          <style>
+            {`
+              .markdown-preview {
+                font-size: ${Math.round(16 * zoomLevel)}px;
+                word-break: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
+                max-width: 100%;
+                overflow-x: hidden;
+                background-color: transparent;
+                color: inherit;
+                line-height: 1.6;
+              }
 
-            .markdown-preview * {
-              word-break: break-word;
-              overflow-wrap: break-word;
-              max-width: 100%;
-            }
+              .markdown-preview * {
+                word-break: break-word;
+                overflow-wrap: break-word;
+                max-width: 100%;
+              }
 
-            .markdown-preview h1:first-child,
-            .markdown-preview h2:first-child,
-            .markdown-preview h3:first-child,
-            .markdown-preview h4:first-child,
-            .markdown-preview h5:first-child,
-            .markdown-preview h6:first-child {
-              margin-top: 0 !important;
-            }
-
-            .markdown-preview h1,
-            .markdown-preview h2,
-            .markdown-preview h3,
-            .markdown-preview h4,
-            .markdown-preview h5,
-            .markdown-preview h6 {
-              margin-top: 1.5em;
-              margin-bottom: 0.5em;
-              font-weight: 600;
-            }
-
-            .markdown-preview h1 {
-              font-size: 2em;
-              border-bottom: 1px solid ${theme === 'darcula' ? '#404040' : (darkMode ? '#404040' : '#eaecef')};
-              padding-bottom: 0.3em;
-            }
-
-            .markdown-preview h2 {
-              font-size: 1.5em;
-              border-bottom: 1px solid ${theme === 'darcula' ? '#404040' : (darkMode ? '#404040' : '#eaecef')};
-              padding-bottom: 0.3em;
-            }
-
-            .markdown-preview p {
-              margin-bottom: 1em;
-            }
-
-            .markdown-preview ul,
-            .markdown-preview ol {
-              margin-bottom: 1em;
-              padding-left: 2em;
-            }
-
-            .markdown-preview li {
-              margin-bottom: 0.25em;
-            }
-
-            .markdown-preview blockquote {
-              border-left: 4px solid ${theme === 'darcula' ? '#404040' : (darkMode ? '#404040' : '#dfe2e5')};
-              padding-left: 1em;
-              margin: 1em 0;
-              color: ${theme === 'darcula' ? '#a0a0a0' : (darkMode ? '#a0a0a0' : '#6a737d')};
-            }
-
-            .markdown-preview code {
-              background-color: ${theme === 'darcula' ? 'rgba(255,255,255,0.1)' : (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(27,31,35,0.05)')};
-              padding: 0.2em 0.4em;
-              border-radius: 3px;
-              font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-              font-size: 85%;
-              line-height: 1.2;
-            }
-
-                        .markdown-preview pre {
-              background-color: ${theme === 'darcula' ? '#2d2d2d' : (darkMode ? '#2d2d2d' : '#f6f8fa')};
-              border-radius: 3px;
-              padding: 16px;
-              overflow: auto;
-              margin: 1em 0;
-              line-height: 1.4;
-              word-break: break-word;
-              overflow-wrap: break-word;
-              white-space: pre-wrap;
-            }
-
-            .markdown-preview pre code {
-              background-color: transparent;
-              padding: 0;
-              line-height: 1.4;
-              word-break: break-word;
-              overflow-wrap: break-word;
-              white-space: pre-wrap;
-            }
-
-            .markdown-preview table {
-              border-collapse: collapse;
-              width: 100%;
-              margin: 1em 0;
-              table-layout: fixed;
-              word-break: break-word;
-              overflow-wrap: break-word;
-            }
-
-            .markdown-preview th,
-            .markdown-preview td {
-              border: 1px solid ${theme === 'darcula' ? '#404040' : (darkMode ? '#404040' : '#dfe2e5')};
-              padding: 6px 13px;
-              word-break: break-word;
-              overflow-wrap: break-word;
-              max-width: 0;
-            }
-
-            .markdown-preview th {
-              background-color: ${theme === 'darcula' ? '#2d2d2d' : (darkMode ? '#2d2d2d' : '#f6f8fa')};
-              font-weight: 600;
-            }
-
-            .markdown-preview a {
-              color: ${theme === 'darcula' ? '#58a6ff' : (darkMode ? '#58a6ff' : '#0366d6')};
-              text-decoration: none;
-            }
-
-            .markdown-preview a:hover {
-              text-decoration: underline;
-            }
-          `}
-        </style>
+              .markdown-preview h1:first-child,
+              .markdown-preview h2:first-child,
+              .markdown-preview h3:first-child,
+              .markdown-preview h4:first-child,
+              .markdown-preview h5:first-child,
+              .markdown-preview h6:first-child {
+                margin-top: 0 !important;
+              }
+            `}
+          </style>
+        )}
       </Box>
 
       {/* エラー表示用のSnackbar */}

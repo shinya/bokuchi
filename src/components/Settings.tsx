@@ -48,6 +48,7 @@ import { useTranslation } from 'react-i18next';
 import { AppSettings } from '../types/settings';
 import { storeApi } from '../api/storeApi';
 import { desktopApi } from '../api/desktopApi';
+import { getThemePreviewCSS } from '../utils/themeCSS';
 
 interface SettingsProps {
   open: boolean;
@@ -82,6 +83,15 @@ const Settings: React.FC<SettingsProps> = ({
     message: '',
     severity: 'success'
   });
+  const [customCSSValue, setCustomCSSValue] = React.useState(settings.customCSS.customCSS);
+
+  // カスタムCSSタブが開かれた時にテーマCSSをロード
+  React.useEffect(() => {
+    if (activeTab === 4 && !settings.customCSS.isCustomized && !customCSSValue) {
+      const themeCSS = getThemePreviewCSS(settings.appearance.theme as import('../themes').ThemeName);
+      setCustomCSSValue(themeCSS);
+    }
+  }, [activeTab, settings.customCSS.isCustomized, settings.appearance.theme, customCSSValue]);
 
   const handleAddVariable = () => {
     if (!newVariableKey.trim()) {
@@ -232,6 +242,38 @@ const Settings: React.FC<SettingsProps> = ({
     }
   };
 
+  // カスタムCSS関連のハンドラー
+  const handleLoadThemeCSS = () => {
+    const themeCSS = getThemePreviewCSS(settings.appearance.theme as import('../themes').ThemeName);
+    setCustomCSSValue(themeCSS);
+    // テーマCSSをロードした時点ではカスタマイズフラグは立てない
+  };
+
+  const handleCustomCSSChange = () => {
+    const isChanged = customCSSValue !== settings.customCSS.customCSS;
+    if (isChanged) {
+      onSettingsChange({
+        ...settings,
+        customCSS: {
+          isCustomized: true,
+          customCSS: customCSSValue,
+        },
+      });
+    }
+  };
+
+  const handleResetCustomCSS = () => {
+    // リセット時は空文字に設定
+    setCustomCSSValue('');
+    onSettingsChange({
+      ...settings,
+      customCSS: {
+        isCustomized: false,
+        customCSS: '',
+      },
+    });
+  };
+
   return (
     <Dialog
       fullScreen
@@ -295,6 +337,11 @@ const Settings: React.FC<SettingsProps> = ({
               <Tab
                 icon={<Code />}
                 label={t('settings.globalVariables.title')}
+                iconPosition="start"
+              />
+              <Tab
+                icon={<Palette />}
+                label={t('settings.customCSS.title')}
                 iconPosition="start"
               />
               <Tab
@@ -619,8 +666,57 @@ const Settings: React.FC<SettingsProps> = ({
               </Box>
             )}
 
-            {/* Advanced Tab */}
+            {/* Custom CSS Tab */}
             {activeTab === 4 && (
+              <Box>
+                <Typography variant="h6" sx={{ mb: 3 }}>
+                  {t('settings.customCSS.title')}
+                </Typography>
+
+                <Card>
+                  <CardContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {t('settings.customCSS.description')}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                      <Button
+                        variant="outlined"
+                        onClick={handleLoadThemeCSS}
+                        disabled={settings.customCSS.isCustomized}
+                      >
+                        {t('settings.customCSS.loadThemeCSS')}
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={handleResetCustomCSS}
+                        disabled={!settings.customCSS.isCustomized}
+                      >
+                        {t('settings.customCSS.reset')}
+                      </Button>
+                    </Box>
+                    <TextField
+                      multiline
+                      rows={20}
+                      fullWidth
+                      value={customCSSValue}
+                      onChange={(e) => setCustomCSSValue(e.target.value)}
+                      onBlur={handleCustomCSSChange}
+                      placeholder={t('settings.customCSS.placeholder')}
+                      sx={{
+                        '& .MuiInputBase-input': {
+                          fontFamily: 'monospace',
+                          fontSize: '14px',
+                        },
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+              </Box>
+            )}
+
+            {/* Advanced Tab */}
+            {activeTab === 5 && (
               <Box>
                 <Typography variant="h6" sx={{ mb: 3 }}>
                   {t('settings.advanced.title')}

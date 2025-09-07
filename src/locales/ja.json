@@ -188,6 +188,13 @@
       "importError": "設定のインポートに失敗しました",
       "resetSuccess": "設定が正常にリセットされました",
       "resetError": "設定のリセットに失敗しました"
+    },
+    "customCSS": {
+      "title": "カスタムCSS",
+      "description": "プレビューのスタイルをカスタマイズできます。テーマのCSSをベースに編集してください。",
+      "loadThemeCSS": "テーマCSSをロード",
+      "reset": "リセット",
+      "placeholder": "/* カスタムCSSをここに記述してください */\n/* 例: .markdown-preview { color: red; } */"
     }
   },
   "fileOperations": {

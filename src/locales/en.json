@@ -188,6 +188,13 @@
       "importError": "Failed to import settings",
       "resetSuccess": "Settings reset successfully",
       "resetError": "Failed to reset settings"
+    },
+    "customCSS": {
+      "title": "Custom CSS",
+      "description": "Customize the preview styling. Edit based on the theme CSS.",
+      "loadThemeCSS": "Load Theme CSS",
+      "reset": "Reset",
+      "placeholder": "/* Write your custom CSS here */\n/* Example: .markdown-preview { color: red; } */"
     }
   },
   "fileOperations": {

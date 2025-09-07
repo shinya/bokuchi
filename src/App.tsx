@@ -167,6 +167,7 @@ function AppDesktop() {
             minimap: appSettings.editor.minimap,
             showWhitespace: appSettings.advanced.showWhitespace,
           }}
+          customCSS={appSettings.customCSS}
           onTabChange={handleTabChange}
           onTabClose={handleTabClose}
           onNewTab={handleNewTab}
