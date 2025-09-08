@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
-import { Box, Typography, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip } from '@mui/material';
-import { Search, Close } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
+import { Box, Typography, IconButton, Tooltip } from '@mui/material';
+import { Search } from '@mui/icons-material';
+// import { useTranslation } from 'react-i18next'; // 現在未使用のためコメントアウト
+import SearchReplaceDialog, { SearchOptions } from './Editor/SearchReplaceDialog';
+import FileNotFoundDisplay from './Editor/FileNotFoundDisplay';
 
 interface EditorProps {
   content: string;
@@ -45,15 +47,8 @@ const MarkdownEditor: React.FC<EditorProps> = ({
   minimap = false,
   showWhitespace = false,
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation(); // 現在未使用のためコメントアウト
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const [replaceText, setReplaceText] = useState('');
-  const [searchOptions, setSearchOptions] = useState({
-    caseSensitive: false,
-    wholeWord: false,
-    regex: false,
-  });
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [editorKey, setEditorKey] = useState(0);
 
@@ -149,7 +144,7 @@ const MarkdownEditor: React.FC<EditorProps> = ({
     }
   };
 
-  const handleSearch = () => {
+  const handleSearch = (searchText: string, searchOptions: SearchOptions) => {
     if (editorRef.current && searchText) {
       const model = editorRef.current.getModel();
       if (!model) return;
@@ -198,7 +193,7 @@ const MarkdownEditor: React.FC<EditorProps> = ({
     }
   };
 
-  const handleReplace = () => {
+  const handleReplace = (searchText: string, replaceText: string, searchOptions: SearchOptions) => {
     if (editorRef.current && searchText && replaceText) {
       const model = editorRef.current.getModel();
       if (!model) return;
@@ -214,7 +209,7 @@ const MarkdownEditor: React.FC<EditorProps> = ({
     }
   };
 
-  const handleReplaceAll = () => {
+  const handleReplaceAll = (searchText: string, replaceText: string, searchOptions: SearchOptions) => {
     if (editorRef.current && searchText && replaceText) {
       const model = editorRef.current.getModel();
       if (!model) return;
@@ -248,31 +243,10 @@ const MarkdownEditor: React.FC<EditorProps> = ({
 
       <Box sx={{ flex: 1, position: 'relative' }}>
         {fileNotFound ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              p: 3,
-              textAlign: 'center',
-            }}
-          >
-            <Typography variant="h6" color="error" gutterBottom>
-              {t('fileOperations.fileNotFound')}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, wordBreak: 'break-all' }}>
-              {fileNotFound.filePath}
-            </Typography>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={fileNotFound.onClose}
-            >
-              {t('fileOperations.closeTab')}
-            </Button>
-          </Box>
+          <FileNotFoundDisplay
+            filePath={fileNotFound.filePath}
+            onClose={fileNotFound.onClose}
+          />
         ) : (
           <Editor
             key={editorKey}
@@ -323,66 +297,13 @@ const MarkdownEditor: React.FC<EditorProps> = ({
       </Box>
 
       {/* 検索・置換ダイアログ */}
-      <Dialog open={searchOpen} onClose={() => setSearchOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Search and Replace
-          <IconButton
-            aria-label="close"
-            onClick={() => setSearchOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-          >
-            <Close />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField
-              label="Search"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              fullWidth
-              autoFocus
-            />
-            <TextField
-              label="Replace"
-              value={replaceText}
-              onChange={(e) => setReplaceText(e.target.value)}
-              fullWidth
-            />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setSearchOptions({ ...searchOptions, caseSensitive: !searchOptions.caseSensitive })}
-                sx={{ fontSize: '0.75rem' }}
-              >
-                {searchOptions.caseSensitive ? 'Aa' : 'Aa'}
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setSearchOptions({ ...searchOptions, wholeWord: !searchOptions.wholeWord })}
-                sx={{ fontSize: '0.75rem' }}
-              >
-                Word
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setSearchOptions({ ...searchOptions, regex: !searchOptions.regex })}
-                sx={{ fontSize: '0.75rem' }}
-              >
-                .*
-              </Button>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSearch}>Search</Button>
-          <Button onClick={handleReplace}>Replace</Button>
-          <Button onClick={handleReplaceAll} variant="contained">Replace All</Button>
-        </DialogActions>
-      </Dialog>
+      <SearchReplaceDialog
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSearch={handleSearch}
+        onReplace={handleReplace}
+        onReplaceAll={handleReplaceAll}
+      />
     </Box>
   );
 };
